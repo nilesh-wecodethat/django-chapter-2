@@ -1,0 +1,57 @@
+{% extends "blog/base.html" %}
+
+{% block title %}{{ post_details.title }}{% endblock %}
+
+{% block content %}
+ <h1>{{ post_details.title }}</h1>
+  <p class="date">
+   Published {{ post_details.publish }} by {{ post_details.author }}
+  </p>
+  {{ post.body | linebreaks }}
+  <p>
+    <a href="{% url "share_post" post_details.id %}">
+      Share this post
+    </a>
+   </p>
+
+  {% with comments.count as total_comments %} <!--stores the comments.count value in the variable total_comments, where count is function but in django template we don't use parathenses-->
+   <h2>
+     {{ total_comments }} comment{{ total_comments|pluralize }}  <!-- adding "s" if comments > 1 making it plural -->
+   </h2>
+  {% endwith %}
+
+
+  {% for comment in comments %}
+    <div class="comment">
+      <p class="info">
+        Comment {{forloop.counter}} by {{comment.name}} {{comment.createdAt}}  <!-- {{forloop.counter}} is index start with 1 -->
+      </p>
+      {{ comment.comment | linebreaks }}
+    </div>
+  {% empty %}
+    <p>There are no comments yet.</p>  <!--  If list is empty -->
+  {% endfor %}
+
+
+  {% if new_comment %}
+    <h2>Your Comment has been added</h2>
+  
+  {% else %}
+      <h2>Add a new comment</h2>
+      <form method="post">
+        {{comment_form.as_p}}
+        {% csrf_token %}
+        <p><input type="submit" value="Add comment"></p>
+      </form>
+  {% endif %}
+
+  <h2>Similar posts</h2>
+  {% for post in similar_posts %}
+   <p>
+    <a href="{{ post.get_absolute_url }}">{{ post.title }}</a>
+   </p>
+  {% empty %}
+   There are no similar posts yet.
+  {% endfor %}
+  
+{% endblock %}
