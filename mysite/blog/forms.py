@@ -12,3 +12,7 @@ class CommentForm(forms.ModelForm) :  # you can use ModelForm, which automatical
     class Meta:
         model = Comment
         fields = ('name', 'email', 'comment')
+
+
+class SearchPostForm(forms.Form):
+    query = forms.CharField()

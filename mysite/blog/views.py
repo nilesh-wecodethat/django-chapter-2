@@ -3,25 +3,33 @@ from django.contrib.auth.models import User
 from blog.models import Post
 from django.http import HttpResponse
 from django.core.paginator import Paginator, EmptyPage,PageNotAnInteger
-from blog.forms import SendEmailForm , CommentForm
+from blog.forms import SendEmailForm , CommentForm, SearchPostForm
 from django.core.mail import send_mail
 from django.urls import reverse
 from taggit.models import Tag
 from django.db.models import Count
-
+from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank, TrigramSimilarity
 
 
 def create_post(request): 
-    user = User.objects.get(username="admin") #The get() method allows you to retrieve a single object from the database.
-    post = Post(title='Another post',   # create post object
-               slug='another-post',
-               content='Post body.',
+    ADMIN = "admin"
+    TITLE= "Post title"
+    SLUG = "post-slug"
+    CONTENT = "Post Content"
+
+    user = User.objects.get(username=ADMIN) #The get() method allows you to retrieve a single object from the database.
+    post = Post(title= TITLE,  
+               slug= SLUG,
+               content= CONTENT,
                author=user)
     post.save()
 
-def update_post(request) : 
-    post = Post.objects.get(slug = 'another-post')
-    post.title = "Anther Post new title"  #update the post field
+
+def update_post(request) :
+    SLUG = 'another-post' 
+    UPDATED_TITLE = "Anther Post new title"
+    post = Post.objects.get(slug = SLUG)
+    post.title =   UPDATED_TITLE
     post.save()
 
 
@@ -34,15 +42,14 @@ def all_posts(request, tag_slug=None) :
         tag = get_object_or_404(Tag, slug=tag_slug)
         post_list = post_list.filter(tags__in=[tag])
 
-    paginator = Paginator(post_list, 3) # 3 posts in each page
+    POST_PER_PAGE = 3
+    paginator = Paginator(post_list, POST_PER_PAGE)
     page = request.GET.get('page')
     try:
         posts = paginator.page(page)
     except PageNotAnInteger:
-        # If page is not an integer deliver the first page
         posts = paginator.page(1)
     except EmptyPage:
-        # If page is out of range deliver last page of results
         posts = paginator.page(paginator.num_pages)
     return render(request,
                     'blog/post/lists.html',
@@ -62,10 +69,9 @@ def delete_post(request) :
     post.delete()
 
 
-def post_details(request, id=2) : 
-    post = get_object_or_404(Post, id=2)
+def post_details(request, id) : 
+    post = get_object_or_404(Post, id)
 
-    # list all the active comments
     comments = post.comments.filter(active=True)
 
     new_comment = None
@@ -78,8 +84,7 @@ def post_details(request, id=2) :
             new_comment.post = post  #assign current Post
             new_comment.save()
 
-            # return redirect('post', post_id=post_id)
-            return redirect(reverse('post_details')) # redirecting to the /post so that in order to reload again, it does'nt create a new comment, where  "post_details" is the name we passed in to the urls.py
+            return redirect(reverse('post_details', args=[post.id])) # redirecting to the /post so that in order to reload again, it does'nt create a new comment, where  "post_details" is the name we passed in to the urls.py
     else : 
         comment_form = CommentForm()
 
@@ -103,20 +108,18 @@ def post_details(request, id=2) :
 def share_post(request, post_id) : 
     post = get_object_or_404(Post, id=post_id)
     sent = False
-
+    HOST_EMAIL = 'patidarnilesh8120@gmail.com'
     if request.method == 'POST' : 
         #form submitted
         form = SendEmailForm(request.POST)
 
         if form.is_valid() : 
-            # validation successful
             data = form.cleaned_data  # If the form is valid, you retrieve the validated data
-            post_url = "post_url"
+            post_url = request.build_absolute_uri(post.get_absolute_url())
             subject = f"{data['name']} recommends you read {post.title}"
             message = f"Read {post.title} at {post_url}\n\n" \
             f"{data['name']}\'s comments: {data['comments']}"
-            send_mail(subject, message, 'patidarnilesh8120@gmail.com',
-            [data['to']])
+            send_mail(subject, message, HOST_EMAIL, [data['to']])
             sent = True
 
     else:  # intial empty form
@@ -129,3 +132,31 @@ def share_post(request, post_id) :
                  'post' : post})
 
 
+
+def search_post(request) : 
+    form = SearchPostForm()
+    query = None
+    results = []
+    if 'query' in request.GET:
+        form = SearchPostForm(request.GET)
+
+        if form.is_valid() :
+            query = form.cleaned_data['query']
+            # search_vector = SearchVector('title', 'content')
+            # search_vector = SearchVector('title', weight='A') + SearchVector('content', weight='B') # we can also give the weight to the attribute e.g. posts that are matched by title rather than by content
+            # search_query = SearchQuery(query)
+            # results = Post.objects.annotate(
+            #     search= search_vector,
+            #     rank = SearchRank(search_vector, search_query) #A score indicating how well the post matches the search query.
+            # ).filter(search=query).order_by('-rank')
+
+
+            results = Post.objects.annotate(
+                similarity = TrigramSimilarity('title', query) # it contain the similarity score for each post's title
+            ).filter(similarity__gt=0.1).order_by('-similarity')
+    
+    return render(request,
+                'blog/post/search.html',
+                {'form' : form,
+                'query' : query,
+                'results': results})

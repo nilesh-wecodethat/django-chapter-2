@@ -10,8 +10,8 @@ class PostAdmin(admin.ModelAdmin):
     search_fields = ('title', 'body')
     prepopulated_fields = {'slug': ('title',)}
     raw_id_fields = ('author',)
-    date_hierarchy = 'publish'
-    ordering = ('status', 'publish')
+    date_hierarchy = 'publish' # it adds a date-based navigation interface
+    ordering = ('status', 'publish') # it sorting by status first and then by publish date. so that records with the same status are further sorted chronologically by when they were published.
 
 
 @admin.register(Comment)
