@@ -13,7 +13,7 @@
        <h1>Share "{{ post.title }}" by e-mail</h1>
 
        <form method="post">
-          {{form.as_p}}  <!-- with each form field wrapped in <p> tags.-->
+          {{form.as_p}}
           {% csrf_token %}
           <input type="submit" value="Send Email">
        </form>

@@ -7,16 +7,16 @@
   <p class="date">
    Published {{ post_details.publish }} by {{ post_details.author }}
   </p>
-  {{ post.body | linebreaks }}
+  {{ post.content | markdown }}
   <p>
     <a href="{% url "share_post" post_details.id %}">
       Share this post
     </a>
    </p>
 
-  {% with comments.count as total_comments %} <!--stores the comments.count value in the variable total_comments, where count is function but in django template we don't use parathenses-->
+  {% with comments.count as total_comments %}
    <h2>
-     {{ total_comments }} comment{{ total_comments|pluralize }}  <!-- adding "s" if comments > 1 making it plural -->
+     {{ total_comments }} comment{{ total_comments|pluralize }} 
    </h2>
   {% endwith %}
 
@@ -24,12 +24,12 @@
   {% for comment in comments %}
     <div class="comment">
       <p class="info">
-        Comment {{forloop.counter}} by {{comment.name}} {{comment.createdAt}}  <!-- {{forloop.counter}} is index start with 1 -->
+        Comment {{forloop.counter}} by {{comment.name}} {{comment.createdAt}}
       </p>
       {{ comment.comment | linebreaks }}
     </div>
   {% empty %}
-    <p>There are no comments yet.</p>  <!--  If list is empty -->
+    <p>There are no comments yet.</p> 
   {% endfor %}
 
 

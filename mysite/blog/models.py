@@ -11,27 +11,27 @@ STATUS_CHOICES = (
 
 class Post(models.Model) : 
     title = models.CharField(max_length=150)
-    slug = models.SlugField(max_length=250,    #A SlugField for the URL slug, unique for the date it is published.
-                            unique_for_date='publish')
+    slug = models.SlugField(max_length=250, 
+                            unique_for_date='publish') 
     author = models.ForeignKey(User,
                                 on_delete=models.CASCADE,
-                                related_name='blog_posts')  #related_name='blog_posts' means that from the User model, you can access all posts written by a particular user (default=post_set)
+                                related_name='blog_posts')  
     content = models.TextField()
-    tags = TaggableManager()
-    publish = models.DateTimeField(default=timezone.now)
-    created = models.DateTimeField(auto_now_add=True)  
-    updated = models.DateTimeField(auto_now=True) 
+    tags = TaggableManager() 
+    publish = models.DateTimeField(default=timezone.now)  
+    created = models.DateTimeField(auto_now_add=True) 
+    updated = models.DateTimeField(auto_now=True)  
     status = models.CharField(max_length=10,
                               choices=STATUS_CHOICES,
                               default='draft')
 
     def get_absolute_url(self):
-       return reverse('post_details', args=[self.id])
+       return reverse('post_details', args=[self.id]) 
 
 
     class Meta:
-        ordering = ('-publish',) #  For example, if you query all post, they will automatically be ordered by the descending order
-    def __str__(self):  #The __str__() method is the default human-readable representation of the object. Django will use it in many places, such as the administration site.
+        ordering = ('-publish',) 
+    def __str__(self): 
         return self.title
 
 

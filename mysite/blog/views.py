@@ -3,25 +3,33 @@ from django.contrib.auth.models import User
 from blog.models import Post
 from django.http import HttpResponse
 from django.core.paginator import Paginator, EmptyPage,PageNotAnInteger
-from blog.forms import SendEmailForm , CommentForm
+from blog.forms import SendEmailForm , CommentForm, SearchPostForm
 from django.core.mail import send_mail
 from django.urls import reverse
 from taggit.models import Tag
 from django.db.models import Count
-
+from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank, TrigramSimilarity
 
 
 def create_post(request): 
-    user = User.objects.get(username="admin") #The get() method allows you to retrieve a single object from the database.
-    post = Post(title='Another post',   # create post object
-               slug='another-post',
-               content='Post body.',
+    ADMIN = "admin"
+    TITLE= "Post title"
+    SLUG = "post-slug"
+    CONTENT = "Post Content"
+
+    user = User.objects.get(username=ADMIN) 
+    post = Post(title= TITLE,  
+               slug= SLUG,
+               content= CONTENT,
                author=user)
     post.save()
 
-def update_post(request) : 
-    post = Post.objects.get(slug = 'another-post')
-    post.title = "Anther Post new title"  #update the post field
+
+def update_post(request) :
+    SLUG = 'another-post' 
+    UPDATED_TITLE = "Anther Post new title"
+    post = Post.objects.get(slug = SLUG)
+    post.title =   UPDATED_TITLE
     post.save()
 
 

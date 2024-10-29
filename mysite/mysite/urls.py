@@ -17,13 +17,19 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 from blog import views
+from django.contrib.sitemaps.views import sitemap
+from blog.sitemaps import PostSitemap
+from blog.feeds import LatestPostsFeed
+
+sitemaps = {
+    'posts' :  PostSitemap
+}
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', views.all_posts, name="all_post"),
     path('tag/', views.all_posts, name="post_list_by_tag"),
-    #  path('blog/', include('blog.urls', namespace='blog'))  #When you want to include another urls.py file from a different app into your main project's urls.py, you use the include function.
-    path('post/<int:id>', views.post_details, name="post_details"), #This URL pattern captures an integer (id) from the URL and passes it as an argument to the post_details view.
+    path('post/<int:id>', views.post_details, name="post_details"), 
     path('<int:post_id>/share/', views.share_post, name='share_post'),
 ]
 
