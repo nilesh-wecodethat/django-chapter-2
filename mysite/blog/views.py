@@ -42,15 +42,14 @@ def all_posts(request, tag_slug=None) :
         tag = get_object_or_404(Tag, slug=tag_slug)
         post_list = post_list.filter(tags__in=[tag])
 
-    paginator = Paginator(post_list, 3) # 3 posts in each page
+    POST_PER_PAGE = 3
+    paginator = Paginator(post_list, POST_PER_PAGE)
     page = request.GET.get('page')
     try:
         posts = paginator.page(page)
     except PageNotAnInteger:
-        # If page is not an integer deliver the first page
         posts = paginator.page(1)
     except EmptyPage:
-        # If page is out of range deliver last page of results
         posts = paginator.page(paginator.num_pages)
     return render(request,
                     'blog/post/lists.html',
@@ -60,8 +59,6 @@ def all_posts(request, tag_slug=None) :
 
 
 def filter_posts(request) : 
-    # posts =  Post.objects.filter(publish__year=2020)  #The filter() method in Django is used to retrieve records from the database that match certain criteria.
-    # Post.objects.filter(publish__year=2020, author__username='admin')  #multiple filter conditions
     filtered_posts = Post.objects.filter(author__username='admin').exclude(status='draft').order_by('-publish') #The query retrieves all posts by the user 'admin', excluding drafts posts, and orders them in descending order.
 
 
@@ -70,10 +67,9 @@ def delete_post(request) :
     post.delete()
 
 
-def post_details(request, id=2) : 
-    post = get_object_or_404(Post, id=2)
+def post_details(request, id) : 
+    post = get_object_or_404(Post, id)
 
-    # list all the active comments
     comments = post.comments.filter(active=True)
 
     new_comment = None
@@ -82,20 +78,18 @@ def post_details(request, id=2) :
         # new comment post
         comment_form = CommentForm(data= request.POST)
         if comment_form.is_valid() : 
-            new_comment = comment_form.save(commit=False) #Create Comment object but don't save to database yet
-            new_comment.post = post  #assign current Post
+            new_comment = comment_form.save(commit=False) 
+            new_comment.post = post  
             new_comment.save()
 
-            # return redirect('post', post_id=post_id)
-            return redirect(reverse('post_details')) # redirecting to the /post so that in order to reload again, it does'nt create a new comment, where  "post_details" is the name we passed in to the urls.py
+            return redirect(reverse('post_details', args=[post.id])) 
     else : 
         comment_form = CommentForm()
 
-    # List of similar posts
+  
     post_tags_ids = post.tags.values_list('id', flat=True)
     similar_posts = Post.objects.filter(tags__in=post_tags_ids).exclude(id=post.id)
-    similar_posts = similar_posts.annotate(same_tags=Count('tags')).order_by('-same_tags','-publish')[:4]  # having doubt
-
+    similar_posts = similar_posts.annotate(same_tags=Count('tags')).order_by('-same_tags','-publish')[:4] 
 
     return render(request,
                 'blog\post\details.html',
@@ -111,23 +105,20 @@ def post_details(request, id=2) :
 def share_post(request, post_id) : 
     post = get_object_or_404(Post, id=post_id)
     sent = False
-
+    HOST_EMAIL = 'patidarnilesh8120@gmail.com'
     if request.method == 'POST' : 
-        #form submitted
         form = SendEmailForm(request.POST)
 
         if form.is_valid() : 
-            # validation successful
-            data = form.cleaned_data  # If the form is valid, you retrieve the validated data
-            post_url = "post_url"
+            data = form.cleaned_data 
+            post_url = request.build_absolute_uri(post.get_absolute_url())
             subject = f"{data['name']} recommends you read {post.title}"
             message = f"Read {post.title} at {post_url}\n\n" \
             f"{data['name']}\'s comments: {data['comments']}"
-            send_mail(subject, message, 'patidarnilesh8120@gmail.com',
-            [data['to']])
+            send_mail(subject, message, HOST_EMAIL, [data['to']])
             sent = True
 
-    else:  # intial empty form
+    else:  
         form = SendEmailForm()
     
     return render(request, 
@@ -137,3 +128,23 @@ def share_post(request, post_id) :
                  'post' : post})
 
 
+
+def search_post(request) : 
+    form = SearchPostForm()
+    query = None
+    results = []
+    if 'query' in request.GET:
+        form = SearchPostForm(request.GET)
+
+        if form.is_valid() :
+            query = form.cleaned_data['query']
+
+            results = Post.objects.annotate(
+                similarity = TrigramSimilarity('title', query) 
+            ).filter(similarity__gt=0.1).order_by('-similarity')
+    
+    return render(request,
+                'blog/post/search.html',
+                {'form' : form,
+                'query' : query,
+                'results': results})
