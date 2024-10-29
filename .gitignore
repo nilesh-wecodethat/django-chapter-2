@@ -1,0 +1,48 @@
+# Byte-compiled files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environment variables
+.env
+
+# Django stuff:
+db.sqlite3
+/media
+/staticfiles
+/static/
+
+# Ignore the following file types:
+*.log
+*.pot
+*.pyc
+*.pyo
+
+# Virtual environment
+venv/
+myenv/
+
+# Node.js dependencies (if you have a frontend setup)
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# macOS-specific files
+.DS_Store
+
+# Windows-specific files
+Thumbs.db
+
+# Ignore local IDE/Editor settings
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Ignore migrations (optional if you don't want to track database changes)
+**/migrations/
+
+# Ignore cache files
+*.cache
+*.mo
+*.swp
